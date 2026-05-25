@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Bill Calculator</string>
+    <string name="electricity_bill_calculator">Electricity Bill Calculator</string>
+    <string name="enter_meter_reading"> Enter meter reading</string>
+    <string name="service_number">Service number</string>
+    <string name="current_reading_units">Current meter reading (units)</string>
+    <string name="submit">Submit</string>
+    <string name="bill_summary">Bill summary"</string>
+    <string name="previous_reading">Previous reading</string>
+    <string name="none">None (first reading)</string>
+    <string name="current_reading">Current reading</string>
+    <string name="consumption">Consumption</string>
+    <string name="total_cost">Total cost</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="date">Date</string>
+    <string name="reading">Reading</string>
+    <string name="cost">Cost</string>
 </resources>
