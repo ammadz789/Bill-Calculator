@@ -13,7 +13,11 @@ Android app that calculates an electricity bill from a meter reading against a c
 
 - Service number must match `^[A-Za-z0-9]{10}$`. Anything else surfaces an inline error and disables Submit.
 - Reading must be a non-negative whole number. Negative values are accepted at the field level so the validator can flag "Meter reading cannot be negative"; the Submit button stays disabled while the error is visible.
+  <img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 17 PM" src="https://github.com/user-attachments/assets/9ea44a16-b0ce-420d-a2f0-eee25113589e" />
+
 - A reading lower than the customer's previous reading shows a snackbar warning ("New reading is lower than the previous reading…") and skips the calculation.
+  <img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 17 PM-2" src="https://github.com/user-attachments/assets/a4067804-f7c1-4660-a906-869a9bdcd958" />
+
 
 ## Tech stack
 
@@ -72,5 +76,12 @@ Room database at `bill-calculator.db` with a single `readings` table indexed by 
 ## Screenshots
 
 - No history for a given service number
+  <img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 17 PM-3" src="https://github.com/user-attachments/assets/baa06f97-8929-4177-97ca-b40a13357ebd" />
+
 - Reading saved
+  <img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 18 PM" src="https://github.com/user-attachments/assets/ddeea7af-1e81-406d-80f1-9a996d0d7451" />
+
 - Last 3 readings for a given service number, displayed in a history table
+  <img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 18 PM-3" src="https://github.com/user-attachments/assets/5e96f34b-4a5e-4fe0-b830-24beab87d96f" />
+<img width="720" height="1600" alt="WhatsApp Image 2026-05-26 at 12 42 18 PM-2" src="https://github.com/user-attachments/assets/33265143-f2f0-4b2b-b21b-62a6ea997546" />
+
