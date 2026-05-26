@@ -5,7 +5,7 @@
     <string name="service_number">Service number</string>
     <string name="current_reading_units">Current meter reading (units)</string>
     <string name="submit">Submit</string>
-    <string name="bill_summary">Bill summary"</string>
+    <string name="bill_summary">Bill summary</string>
     <string name="previous_reading">Previous reading</string>
     <string name="none">None (first reading)</string>
     <string name="current_reading">Current reading</string>

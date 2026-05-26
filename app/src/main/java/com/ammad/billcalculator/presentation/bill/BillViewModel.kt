@@ -37,16 +37,14 @@ class BillViewModel(
     }
 
     fun onReadingChange(value: String) {
-        val digitsOnly = value.filter { it.isDigit() }
+        val sanitized = value.filterIndexed { i, c -> c.isDigit() || (c == '-' && i == 0) }
+        val error = when (val result = Validators.validateReading(sanitized)) {
+            is Validators.ReadingResult.Valid -> null
+            is Validators.ReadingResult.Invalid ->
+                if (sanitized.isEmpty()) null else result.message
+        }
         _state.update {
-            it.copy(
-                currentReading = digitsOnly,
-                currentReadingError = when {
-                    digitsOnly.isEmpty() -> null
-                    digitsOnly.toLongOrNull() == null -> Validators.ERROR_READING_NOT_NUMERIC
-                    else -> null
-                },
-            )
+            it.copy(currentReading = sanitized, currentReadingError = error)
         }
     }
 
