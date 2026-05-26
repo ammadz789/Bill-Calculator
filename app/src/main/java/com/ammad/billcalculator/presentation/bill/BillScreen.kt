@@ -1,5 +1,7 @@
 package com.ammad.billcalculator.presentation.bill
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,12 +10,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,10 +33,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -37,29 +47,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ammad.billcalculator.R
 import com.ammad.billcalculator.domain.Reading
+import com.ammad.billcalculator.presentation.theme.MonoFamily
 import com.ammad.billcalculator.util.Validators
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Currency
 import java.util.Date
 import java.util.Locale
 
-private val currencyFormat: NumberFormat = NumberFormat.getCurrencyInstance(Locale.US).apply {
-    minimumFractionDigits = 2
-    maximumFractionDigits = 2
-}
+private val currencyFormat: NumberFormat =
+    NumberFormat.getCurrencyInstance(Locale("en", "PK")).apply {
+        currency = Currency.getInstance("PKR")
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
+    }
 
 private val dateFormat: SimpleDateFormat =
-    SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+    SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
+private val PillShape = RoundedCornerShape(50)
+private val CardCornerShape = RoundedCornerShape(16.dp)
+private val FieldShape = RoundedCornerShape(12.dp)
 
 @Composable
 fun BillScreenHost(
@@ -98,12 +113,26 @@ fun BillScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.electricity_bill_calculator)) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Bolt,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.size(8.dp))
+                        Text(
+                            text = stringResource(R.string.electricity_bill_calculator),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.background,
                 ),
             )
         },
@@ -114,8 +143,8 @@ fun BillScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             EntryCard(
                 state = state,
@@ -124,9 +153,32 @@ fun BillScreen(
                 onSubmit = onSubmit,
             )
             state.result?.let { result ->
-                ResultCard(result = result, onSave = onSave, onCancel = onCancel, isSubmitting = state.isSubmitting)
+                SummaryCard(result = result)
+                HistorySection(result = result)
+                ActionRow(
+                    onSave = onSave,
+                    onCancel = onCancel,
+                    isSubmitting = state.isSubmitting,
+                )
             }
+            Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+@Composable
+private fun SectionCard(content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = CardCornerShape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) { content() }
     }
 }
 
@@ -137,145 +189,209 @@ private fun EntryCard(
     onReadingChange: (String) -> Unit,
     onSubmit: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Column(
+    SectionCard {
+        Text(
+            text = stringResource(R.string.enter_meter_reading),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Spacer(Modifier.height(20.dp))
+
+        ThemedField(
+            value = state.serviceNumber,
+            onValueChange = onServiceNumberChange,
+            label = stringResource(R.string.service_number),
+            leadingIcon = Icons.Filled.Badge,
+            isError = state.serviceNumberError != null,
+            supportingText = state.serviceNumberError
+                ?: "Exactly ${Validators.SERVICE_NUMBER_LENGTH} alphanumeric characters",
+            enabled = state.result == null,
+            keyboardOptions = KeyboardOptions(),
+        )
+        Spacer(Modifier.height(12.dp))
+        ThemedField(
+            value = state.currentReading,
+            onValueChange = onReadingChange,
+            label = stringResource(R.string.current_reading_units),
+            leadingIcon = Icons.Filled.Speed,
+            isError = state.currentReadingError != null,
+            supportingText = state.currentReadingError,
+            enabled = state.result == null,
+            keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+        )
+
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = onSubmit,
+            enabled = state.canSubmit,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .height(52.dp),
+            shape = PillShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Bolt,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+            if (state.isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
-                Spacer(Modifier.height(0.dp))
+            } else {
                 Text(
-                    stringResource(R.string.enter_meter_reading),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = stringResource(R.string.submit),
+                    style = MaterialTheme.typography.titleSmall,
                 )
-            }
-            OutlinedTextField(
-                value = state.serviceNumber,
-                onValueChange = onServiceNumberChange,
-                label = { Text(stringResource(R.string.service_number)) },
-                singleLine = true,
-                isError = state.serviceNumberError != null,
-                supportingText = {
-                    val msg = state.serviceNumberError
-                        ?: "Exactly ${Validators.SERVICE_NUMBER_LENGTH} alphanumeric characters"
-                    Text(msg)
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                    keyboardType = KeyboardType.Ascii,
-                    imeAction = ImeAction.Next,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                enabled = state.result == null,
-            )
-            OutlinedTextField(
-                value = state.currentReading,
-                onValueChange = onReadingChange,
-                label = { Text(stringResource(R.string.current_reading_units)) },
-                singleLine = true,
-                isError = state.currentReadingError != null,
-                supportingText = state.currentReadingError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                enabled = state.result == null,
-            )
-            Button(
-                onClick = onSubmit,
-                enabled = state.canSubmit,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (state.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(stringResource(R.string.submit))
-                }
             }
         }
     }
 }
 
 @Composable
-private fun ResultCard(
-    result: CalculationResult,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
-    isSubmitting: Boolean,
+private fun ThemedField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    leadingIcon: ImageVector,
+    isError: Boolean,
+    supportingText: String?,
+    enabled: Boolean,
+    keyboardOptions: KeyboardOptions,
 ) {
-    Card(
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = leadingIcon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        },
+        singleLine = true,
+        isError = isError,
+        supportingText = supportingText?.let { { Text(it) } },
+        enabled = enabled,
+        keyboardOptions = keyboardOptions,
+        shape = FieldShape,
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            unfocusedLabelColor = MaterialTheme.colorScheme.outline,
+            cursorColor = MaterialTheme.colorScheme.primary,
+        ),
+    )
+}
+
+@Composable
+private fun SummaryCard(result: CalculationResult) {
+    SectionCard {
+        Text(
+            text = stringResource(R.string.bill_summary),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Spacer(Modifier.height(20.dp))
+        SummaryRow(
+            label = stringResource(R.string.previous_reading),
+            value = result.previousReading?.toString() ?: stringResource(R.string.none),
+        )
+        Spacer(Modifier.height(12.dp))
+        SummaryRow(
+            label = stringResource(R.string.current_reading),
+            value = result.currentReading.toString(),
+        )
+        Spacer(Modifier.height(12.dp))
+        SummaryRow(
+            label = stringResource(R.string.consumption),
+            value = "${result.consumption} units",
+        )
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.bill_summary), style = MaterialTheme.typography.titleMedium)
-            SummaryRow(
-                label = stringResource(R.string.previous_reading),
-                value = result.previousReading?.toString() ?: stringResource(R.string.none),
+            Text(
+                text = stringResource(R.string.total_cost),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
             )
-            SummaryRow(label = stringResource(R.string.current_reading), value = result.currentReading.toString())
-            SummaryRow(label = stringResource(R.string.consumption), value = "${result.consumption} units")
-            HorizontalDivider()
-            SummaryRow(
-                label = stringResource(R.string.total_cost),
-                value = currencyFormat.format(result.cost),
-                emphasize = true,
+            Text(
+                text = currencyFormat.format(result.cost),
+                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = MonoFamily),
+                color = MaterialTheme.colorScheme.primary,
             )
+        }
+    }
+}
 
-            if (result.history.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Last ${result.history.size} reading(s) for ${result.serviceNumber}",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                HistoryTable(history = result.history)
-            } else {
-                Text(
-                    "No previous readings for ${result.serviceNumber}.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+@Composable
+private fun SummaryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    enabled = !isSubmitting,
-                ) { Text(stringResource(R.string.cancel)) }
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f),
-                    enabled = !isSubmitting,
-                ) {
-                    if (isSubmitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.height(20.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text(stringResource(R.string.save))
+@Composable
+private fun HistorySection(result: CalculationResult) {
+    if (result.history.isEmpty()) {
+        SectionCard {
+            Text(
+                text = "No previous readings for ${result.serviceNumber}.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row {
+            Text(
+                text = "Last ${result.history.size} reading(s) for ",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = result.serviceNumber,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = CardCornerShape,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        ) {
+            Column {
+                HistoryHeader()
+                result.history.forEachIndexed { index, row ->
+                    HistoryDataRow(row)
+                    if (index < result.history.lastIndex) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
             }
@@ -284,75 +400,146 @@ private fun ResultCard(
 }
 
 @Composable
-private fun SummaryRow(label: String, value: String, emphasize: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = label,
-            style = if (emphasize) MaterialTheme.typography.titleMedium
-            else MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            text = value,
-            style = if (emphasize) MaterialTheme.typography.titleMedium
-            else MaterialTheme.typography.bodyMedium,
-            fontWeight = if (emphasize) FontWeight.Bold else FontWeight.Normal,
-        )
-    }
-}
-
-@Composable
-private fun HistoryTable(history: List<Reading>) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            HistoryRow(
-                date = stringResource(R.string.date),
-                reading = stringResource(R.string.reading),
-                cost = stringResource(R.string.cost),
-                header = true,
-            )
-            HorizontalDivider()
-            history.forEach { row ->
-                HistoryRow(
-                    date = dateFormat.format(Date(row.timestamp)),
-                    reading = row.reading.toString(),
-                    cost = currencyFormat.format(row.cost),
-                    header = false,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryRow(date: String, reading: String, cost: String, header: Boolean) {
-    val style = if (header) MaterialTheme.typography.labelMedium
-    else MaterialTheme.typography.bodySmall
-    val weight = if (header) FontWeight.Bold else FontWeight.Normal
+private fun HistoryHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(date, style = style, fontWeight = weight, modifier = Modifier.weight(2f))
+        HeaderCell(
+            text = stringResource(R.string.date),
+            icon = Icons.Filled.CalendarToday,
+            weight = 2f,
+            align = TextAlign.Start,
+        )
+        HeaderCell(
+            text = stringResource(R.string.reading),
+            icon = Icons.AutoMirrored.Filled.ShowChart,
+            weight = 1.2f,
+            align = TextAlign.Start,
+        )
+        HeaderCell(
+            text = stringResource(R.string.cost),
+            icon = Icons.Filled.Payments,
+            weight = 1.4f,
+            align = TextAlign.Start,
+        )
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.HeaderCell(
+    text: String,
+    icon: ImageVector,
+    weight: Float,
+    align: TextAlign,
+) {
+    Row(
+        modifier = Modifier
+            .weight(weight)
+            .padding(end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.size(4.dp))
         Text(
-            reading,
-            style = style,
-            fontWeight = weight,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = align,
+        )
+    }
+}
+
+@Composable
+private fun HistoryDataRow(row: Reading) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = dateFormat.format(Date(row.timestamp)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .weight(2f)
+                .padding(end = 8.dp),
         )
         Text(
-            cost,
-            style = style,
-            fontWeight = weight,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1.2f),
+            text = row.reading.toString(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp),
         )
+        Text(
+            text = currencyFormat.format(row.cost),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1.4f),
+        )
+    }
+}
+
+@Composable
+private fun ActionRow(
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    isSubmitting: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Button(
+            onClick = onSave,
+            enabled = !isSubmitting,
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
+            shape = PillShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            if (isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.save),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+        }
+        OutlinedButton(
+            onClick = onCancel,
+            enabled = !isSubmitting,
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
+            shape = PillShape,
+            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+        ) {
+            Text(
+                text = stringResource(R.string.cancel),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
